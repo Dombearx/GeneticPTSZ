@@ -14,14 +14,13 @@ class TaskOnMachine:
 
 
 class Individual():
-    tasksOnMachines = []
-    tasks = []
-    fittnesValue = -1
-    solution = []
-    translatedSolution = []
 
     def __init__(self, tasks):
         self.tasks = tasks
+        self.tasksOnMachines = []
+        self.fittnesValue = -1
+        self.solution = []
+        self.translatedSolution = []
 
     def sortByPriority(self, tasks):
         return sorted(tasks, key=lambda x: x.priority, reverse=False)
@@ -56,7 +55,7 @@ class Individual():
 
     def generateFirstSolution(self):
         priority = []
-        for i in range(0, 4):
+        for _ in range(0, 4):
             priority.append(0)
         for task in self.tasks:
             machine = random.randint(0, 3)
@@ -93,11 +92,10 @@ class Individual():
 
 
 class Population:
-    individuals = []
-    populationSize = -1
 
     def __init__(self, populationSize):
         self.populationSize = populationSize
+        self.individuals = []
 
     def generateIndividuals(self, tasks):
         for i in range(0, populationSize):
@@ -144,7 +142,7 @@ class Population:
 
         randomNumber = random.randint(0, fittnesValueSum)
         for id, fittnesSum in ranking:
-            if (fittnesSum > randomNumber):
+            if (fittnesSum >= randomNumber):
                 del self.individuals[id]
                 return True
         return True
@@ -153,35 +151,48 @@ class Population:
         self.individuals.append(individual)
 
     def evolution(self):
-        print("---------------- Evolution start ----------------")
+        #print("---------------- Evolution start ----------------")
         first = self.select()
         second = self.select()
 
-        print("1st parent fittness: ", first.getFittnesValue())
-        print("2nd parent fittness: ", second.getFittnesValue())
+        #print("1st parent fittness: ", first.getFittnesValue())
+        #print("2nd parent fittness: ", second.getFittnesValue())
         newIndividual = first.crossover(second)
         newIndividual.mutate()
 
-        print("child fittness: ", newIndividual.getFittnesValue())
+        #print("child fittness: ", newIndividual.getFittnesValue())
         self.remove()
         self.addIndividual(newIndividual)
 
-        print("---------------- Evolution done ----------------")
+        #print("---------------- Evolution done ----------------")
         return True
+
+    def addToLog(self, log):
+        try:
+            log.append(self.getBestIndividual().getFittnesValue())
+        except:
+            print("Erorr:", len(self.individuals))
 
 
 ##MAIN##
 numberOfTasks, tasks = utils.readInputFile("input\\in132207_10.txt")
 
-populationSize = 10
+populationSize = 100
+
+outputLog = []
 
 population = Population(populationSize)
 population.generateIndividuals(tasks)
 population.generateFirstSolutions()
+
+population.addToLog(outputLog)
 # pp.pprint(population.getBestIndividual().getFittnesValue())
 # pp.pprint(population.select())
 # print("done")
 
-for i in range(0, 100):
+for i in range(0, 1000):
     pp.pprint(population.getBestIndividual().getFittnesValue())
     population.evolution()
+    population.addToLog(outputLog)
+
+utils.makeSimpleLogFile(outputLog, "output\\log.txt")
