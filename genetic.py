@@ -27,6 +27,8 @@ class Individual():
         return sorted(tasks, key=lambda x: x.priority, reverse=False)
 
     def translateSolution(self):
+        self.solution = []
+        self.translatedSolution = []
         for i in range(0, 4):
             self.solution.append([])
         for taskOnMachine in self.tasksOnMachines:
@@ -53,31 +55,32 @@ class Individual():
             self.tasks, self.translatedSolution)
 
     def generateFirstSolution(self):
-        piority = []
+        priority = []
         for i in range(0, 4):
-            piority.append(0)
+            priority.append(0)
         for task in self.tasks:
             machine = random.randint(0, 3)
             self.tasksOnMachines.append(
-                TaskOnMachine(task, machine, piority[machine]))
-            piority[machine] += 1
+                TaskOnMachine(task, machine, priority[machine]))
+            priority[machine] += 1
         self.translateSolution()
 
     def mutate(self):
         machine = random.randint(0, 3)
         task = random.randint(0, len(self.tasksOnMachines) - 1)
-        maxPiority = 0
+        maxpriority = 0
         for taskOnMachine in self.tasksOnMachines:
             if taskOnMachine.machine == machine:
-                if taskOnMachine.piority > maxPiority:
-                    maxPiority = taskOnMachine.piority
+                if taskOnMachine.priority > maxpriority:
+                    maxpriority = taskOnMachine.priority
 
-        piority = random.randint(0, maxPiority)
+        priority = random.randint(0, maxpriority)
 
         self.tasksOnMachines[task].machine = machine
-        self.tasksOnMachines[task].piority = piority
+        self.tasksOnMachines[task].priority = priority
 
         self.translateSolution()
+        self.calculateFittnesValue()
         return True
 
     def crossover(self, other):
@@ -119,15 +122,15 @@ class Population:
         sumOfValues = 0
         newSumOfValues = 0
         for individual in self.individuals:
-            sumOfValues = individual.getFittnesValue()
+            sumOfValues += individual.getFittnesValue()
         for id, individual in enumerate(self.individuals):
-            newSumOfValues = sumOfValues - individual.getFittnesValue()
+            newSumOfValues += sumOfValues - individual.getFittnesValue()
             ranking.append((id, newSumOfValues))
 
         randomNumber = random.randint(0, newSumOfValues)
-        print("randomNumber", randomNumber)
+        #print("randomNumber", randomNumber)
         for id, fittnesSum in ranking:
-            print("fittnesSum", fittnesSum)
+           # print("fittnesSum", fittnesSum)
             if (fittnesSum > randomNumber):
                 return self.individuals[id]
         return None
@@ -137,27 +140,33 @@ class Population:
         fittnesValueSum = 0
         for id, individual in enumerate(self.individuals):
             fittnesValueSum += individual.getFittnesValue()
-            ranking.append(id, fittnesValueSum)
+            ranking.append((id, fittnesValueSum))
 
         randomNumber = random.randint(0, fittnesValueSum)
         for id, fittnesSum in ranking:
             if (fittnesSum > randomNumber):
                 del self.individuals[id]
+                return True
         return True
 
     def addIndividual(self, individual):
         self.individuals.append(individual)
 
     def evolution(self):
+        print("---------------- Evolution start ----------------")
         first = self.select()
         second = self.select()
 
+        print("1st parent fittness: ", first.getFittnesValue())
+        print("2nd parent fittness: ", second.getFittnesValue())
         newIndividual = first.crossover(second)
         newIndividual.mutate()
 
+        print("child fittness: ", newIndividual.getFittnesValue())
         self.remove()
         self.addIndividual(newIndividual)
 
+        print("---------------- Evolution done ----------------")
         return True
 
 
@@ -169,9 +178,10 @@ populationSize = 10
 population = Population(populationSize)
 population.generateIndividuals(tasks)
 population.generateFirstSolutions()
-print("done")
-'''
-for i in range(0, 10000):
+# pp.pprint(population.getBestIndividual().getFittnesValue())
+# pp.pprint(population.select())
+# print("done")
+
+for i in range(0, 100):
     pp.pprint(population.getBestIndividual().getFittnesValue())
     population.evolution()
-'''
