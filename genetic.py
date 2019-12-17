@@ -175,7 +175,7 @@ class Population:
 
 
 ##MAIN##
-numberOfTasks, tasks = utils.readInputFile("input\\in132207_10.txt")
+numberOfTasks, tasks = utils.readInputFile("input\\in132207_500.txt")
 
 populationSize = 100
 
@@ -191,7 +191,7 @@ population.addToLog(outputLog)
 # print("done")
 
 for i in range(0, 1000):
-    pp.pprint(population.getBestIndividual().getFittnesValue())
+    # pp.pprint(population.getBestIndividual().getFittnesValue())
     population.evolution()
     population.addToLog(outputLog)
 
