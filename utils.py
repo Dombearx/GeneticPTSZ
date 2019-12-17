@@ -123,6 +123,22 @@ def makeTxt(sum, lines, outputName):
     file.close()
 
 
+def makeSimpleLogFile(lines, outputName):
+    file = open(outputName, "w")
+    for value in lines:
+        file.write(str(value) + "\t")
+    file.close()
+
+
+def makelogFile(lines, outputName):
+    file = open(outputName, "w")
+    for line in lines:
+        for value in line:
+            file.write(str(value) + "\t")
+        file.write("\n")
+    file.close()
+
+
 def generateOutputFile(sum, solution, outputName):
     lines = []
     space = " "
