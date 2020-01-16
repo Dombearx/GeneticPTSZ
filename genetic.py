@@ -1,6 +1,7 @@
 import utils
 import random
 import pprint as pp
+import copy
 
 
 class TaskOnMachine:
@@ -28,6 +29,7 @@ class Individual():
     def translateSolution(self):
         self.solution = []
         self.translatedSolution = []
+
         for i in range(0, 4):
             self.solution.append([])
         for taskOnMachine in self.tasksOnMachines:
@@ -37,6 +39,8 @@ class Individual():
         for i in range(0, 4):
             self.solution[i] = self.sortByPriority(self.solution[i])
 
+        self.recalculatePriority()
+
         for i in range(0, 4):
             self.translatedSolution.append([])
 
@@ -44,8 +48,6 @@ class Individual():
             self.translatedSolution[i] = [
                 x.task.number for x in self.solution[i]]
 
-    def getTranslatedSolution(self):
-        return self.translatedSolution
 
     def calculateFittnesValue(self):
         if(self.translatedSolution == []):
@@ -54,15 +56,25 @@ class Individual():
             self.tasks, self.translatedSolution)
 
     def generateFirstSolution(self):
+        for task in self.tasks:
+            machine = random.randint(0, 3)
+            priority = random.randint(0, len(tasks))
+
+            self.tasksOnMachines.append(
+                TaskOnMachine(task, machine, priority))
+
+        self.translateSolution()
+
+    def recalculatePriority(self):
         priority = []
         for _ in range(0, 4):
             priority.append(0)
-        for task in self.tasks:
-            machine = random.randint(0, 3)
-            self.tasksOnMachines.append(
-                TaskOnMachine(task, machine, priority[machine]))
-            priority[machine] += 1
-        self.translateSolution()
+
+        for machine in self.solution:
+            for task in machine:
+                task.priority = priority[task.machine]
+                priority[task.machine] += 1
+
 
     def mutate(self):
         machine = random.randint(0, 3)
@@ -83,7 +95,13 @@ class Individual():
         return True
 
     def crossover(self, other):
-        return other
+        newIndividual = copy.deepcopy(other)
+        crossPoint = random.randint(0, len(self.tasks))
+        for i in range(0, crossPoint):
+            newIndividual.tasksOnMachines[i] = self.tasksOnMachines[i]
+
+        newIndividual.translateSolution()
+        return newIndividual
 
     def getFittnesValue(self):
         if self.fittnesValue == -1:
@@ -98,7 +116,7 @@ class Population:
         self.individuals = []
 
     def generateIndividuals(self, tasks):
-        for i in range(0, populationSize):
+        for _ in range(0, populationSize):
             self.individuals.append(Individual(tasks))
 
     def getBestIndividual(self):
@@ -126,9 +144,7 @@ class Population:
             ranking.append((id, newSumOfValues))
 
         randomNumber = random.randint(0, newSumOfValues)
-        #print("randomNumber", randomNumber)
         for id, fittnesSum in ranking:
-           # print("fittnesSum", fittnesSum)
             if (fittnesSum > randomNumber):
                 return self.individuals[id]
         return None
@@ -155,12 +171,9 @@ class Population:
         first = self.select()
         second = self.select()
 
-        #print("1st parent fittness: ", first.getFittnesValue())
-        #print("2nd parent fittness: ", second.getFittnesValue())
         newIndividual = first.crossover(second)
         newIndividual.mutate()
 
-        #print("child fittness: ", newIndividual.getFittnesValue())
         self.remove()
         self.addIndividual(newIndividual)
 
@@ -175,9 +188,9 @@ class Population:
 
 
 ##MAIN##
-numberOfTasks, tasks = utils.readInputFile("input\\in132207_500.txt")
+numberOfTasks, tasks = utils.readInputFile("input\\in132207_50.txt")
 
-populationSize = 100
+populationSize = 20
 
 outputLog = []
 
@@ -186,13 +199,14 @@ population.generateIndividuals(tasks)
 population.generateFirstSolutions()
 
 population.addToLog(outputLog)
-# pp.pprint(population.getBestIndividual().getFittnesValue())
-# pp.pprint(population.select())
-# print("done")
 
-for i in range(0, 1000):
-    # pp.pprint(population.getBestIndividual().getFittnesValue())
+best = 99999
+
+for i in range(0, 10000000):
+    if population.getBestIndividual().getFittnesValue() < best:
+        best = population.getBestIndividual().getFittnesValue()
+        pp.pprint(population.getBestIndividual().translatedSolution)
+        print("Best in generation", str(i), "->", str(best))
     population.evolution()
-    population.addToLog(outputLog)
 
-utils.makeSimpleLogFile(outputLog, "output\\log.txt")
+
