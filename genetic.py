@@ -2,12 +2,13 @@ import utils
 import random
 import pprint as pp
 import copy
+import solverListowy
 
 
 class TaskOnMachine:
-    def __init__(self, task, machine, priority):
+    def __init__(self, taskId, machine, priority):
         # zadanie
-        self.task = task
+        self.taskId = taskId
         # do jakiej maszyny jest przypisane
         self.machine = int(machine)
         # piorytet
@@ -46,8 +47,7 @@ class Individual():
 
         for i in range(0, 4):
             self.translatedSolution[i] = [
-                x.task.number for x in self.solution[i]]
-
+                x.taskId for x in self.solution[i]]
 
     def calculateFittnesValue(self):
         if(self.translatedSolution == []):
@@ -55,13 +55,20 @@ class Individual():
         self.fittnesValue = utils.calculateFittnesValue(
             self.tasks, self.translatedSolution)
 
+    def readSolution(self, solution):
+        for machineId, machine in enumerate(solution):
+            for priority, taskId in enumerate(machine):
+                self.tasksOnMachines.append(
+                    TaskOnMachine(taskId, machineId, priority))
+        self.translateSolution()
+
     def generateFirstSolution(self):
         for task in self.tasks:
             machine = random.randint(0, 3)
             priority = random.randint(0, len(tasks))
 
             self.tasksOnMachines.append(
-                TaskOnMachine(task, machine, priority))
+                TaskOnMachine(task.number, machine, priority))
 
         self.translateSolution()
 
@@ -74,7 +81,6 @@ class Individual():
             for task in machine:
                 task.priority = priority[task.machine]
                 priority[task.machine] += 1
-
 
     def mutate(self):
         machine = random.randint(0, 3)
@@ -116,6 +122,7 @@ class Population:
         self.individuals = []
 
     def generateIndividuals(self, tasks):
+        self.tasks = tasks
         for _ in range(0, populationSize):
             self.individuals.append(Individual(tasks))
 
@@ -130,7 +137,13 @@ class Population:
         return bestIndividual
 
     def generateFirstSolutions(self):
-        for individual in self.individuals:
+
+        listowy = solverListowy.generateSolution(
+            len(self.tasks), 4, self.tasks)
+        for individual in self.individuals[:int(len(self.individuals) / 2)]:
+            individual.readSolution(listowy)
+
+        for individual in self.individuals[int(len(self.individuals) / 2):]:
             individual.generateFirstSolution()
 
     def select(self):
@@ -190,7 +203,7 @@ class Population:
 ##MAIN##
 numberOfTasks, tasks = utils.readInputFile("input\\in132207_50.txt")
 
-populationSize = 20
+populationSize = 30
 
 outputLog = []
 
@@ -202,11 +215,13 @@ population.addToLog(outputLog)
 
 best = 99999
 
-for i in range(0, 10000000):
+for i in range(0, 100000):
     if population.getBestIndividual().getFittnesValue() < best:
-        best = population.getBestIndividual().getFittnesValue()
-        pp.pprint(population.getBestIndividual().translatedSolution)
-        print("Best in generation", str(i), "->", str(best))
+        bestInd = population.getBestIndividual()
+        best = bestInd.getFittnesValue()
+        pp.pprint(bestInd.translatedSolution)
+        print("Best in generation", str(i), "->",
+              str(bestInd.getFittnesValue()))
     population.evolution()
 
-
+utils.generateOutputFile(best, bestInd.translatedSolution, "out.txt")
